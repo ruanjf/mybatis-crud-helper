@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+    <!--<classPathEntry location="/Program Files/lib/java/db2java.zip" />-->
+
+    <context id="DB2Tables" targetRuntime="MyBatis3DynamicSQL">
+
+        <plugin type="com.runjf.mybatis.crud.GeneratorPlugin">
+            <!--<property name="clientSuperInterface" value="com.runjf.mybatis.crud.BaseMapper#M#K" />-->
+            <!--<property name="modelSuperClass" value="com.runjf.mybatis.crud.BaseEntity#K" />-->
+            <!--<property name="modelSuperInterface" value="com.runjf.mybatis.crud.BaseEntity#K" />-->
+        </plugin>
+
+        <commentGenerator>
+            <property name="suppressAllComments" value="true" />
+            <property name="suppressDate" value="true" />
+        </commentGenerator>
+
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                        connectionURL="jdbc:mysql://localhost:3306/test?useSSL=false&amp;characterEncoding=utf8"
+                        userId="root"
+                        password="root">
+        </jdbcConnection>
+
+        <javaTypeResolver>
+            <property name="forceBigDecimals" value="false" />
+        </javaTypeResolver>
+
+        <javaModelGenerator targetPackage="com.runjf.spring.mybatis.entity" targetProject="src/main/java">
+            <property name="enableSubPackages" value="true" />
+        </javaModelGenerator>
+
+        <javaClientGenerator type="XMLMAPPER" targetPackage="com.runjf.spring.mybatis.mapper"  targetProject="src/main/java">
+            <property name="enableSubPackages" value="true" />
+        </javaClientGenerator>
+        
+        <table schema="test" tableName="SimpleTable" domainObjectName="SimpleTable" />
+        <table schema="test" tableName="user_log" domainObjectName="UserLog" />
+        <table schema="test" tableName="user_loga" domainObjectName="UserLoga" />
+
+    </context>
+</generatorConfiguration>
