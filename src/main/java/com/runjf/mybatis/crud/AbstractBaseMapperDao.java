@@ -1,5 +1,6 @@
 package com.runjf.mybatis.crud;
 
+import org.mybatis.dynamic.sql.SqlTable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,17 +15,17 @@ import java.util.Optional;
  *
  * Created by rjf on 2018/5/12.
  */
-public abstract class AbstractBaseMapperDao<T extends Identity<ID>, ID> implements PagingAndSortingRepository<T, ID> {
+public abstract class AbstractBaseMapperDao<D extends BaseMapper<T, ID>, T extends Identity<ID>, ID> implements PagingAndSortingRepository<T, ID> {
 
-    private final BaseMapper<T, ID> baseMapper;
+    private final D mapper;
 
-    public AbstractBaseMapperDao(BaseMapper<T, ID> baseMapper) {
-        this.baseMapper = baseMapper;
+    public AbstractBaseMapperDao(D mapper) {
+        this.mapper = mapper;
     }
 
     @Override
     public Iterable<T> findAll(Sort sort) {
-        return baseMapper.selectByExample()
+        return mapper.selectByExample()
                 .orderBy(PageUtils.buildSortSpecifications(sort))
                 .build()
                 .execute();
@@ -32,10 +33,10 @@ public abstract class AbstractBaseMapperDao<T extends Identity<ID>, ID> implemen
 
     @Override
     public Page<T> findAll(Pageable pageable) {
-        return PageUtils.buildPage(pageable, orders -> baseMapper.selectByExample()
+        return PageUtils.buildPage(pageable, orders -> mapper.selectByExample()
                 .orderBy(orders)
                 .build()
-                .execute());
+                .execute(), getSqlTable());
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
@@ -44,12 +45,12 @@ public abstract class AbstractBaseMapperDao<T extends Identity<ID>, ID> implemen
         if (entity != null) {
             int count;
             if (entity.getId() == null) {
-                count = baseMapper.insert(entity);
+                count = mapper.insert(entity);
             } else {
-                count = baseMapper.updateByPrimaryKeySelective(entity);
+                count = mapper.updateByPrimaryKeySelective(entity);
             }
             if (count == 1) {
-                return (S) baseMapper.selectByPrimaryKey(entity.getId());
+                return (S) mapper.selectByPrimaryKey(entity.getId());
             }
         }
         return null;
@@ -64,37 +65,37 @@ public abstract class AbstractBaseMapperDao<T extends Identity<ID>, ID> implemen
 
     @Override
     public Optional<T> findById(ID id) {
-        return Optional.ofNullable(baseMapper.selectByPrimaryKey(id));
+        return Optional.ofNullable(mapper.selectByPrimaryKey(id));
     }
 
     @Override
     public boolean existsById(ID id) {
-        return baseMapper.existsByPrimaryKey(id);
+        return mapper.existsByPrimaryKey(id);
     }
 
     @Override
     public Iterable<T> findAll() {
-        return baseMapper.selectByExample().build().execute();
+        return mapper.selectByExample().build().execute();
     }
 
     @Override
     public Iterable<T> findAllById(Iterable<ID> ids) {
         if (ids instanceof List) {
-            return baseMapper.selectAllByPrimaryKey((List<ID>) ids);
+            return mapper.selectAllByPrimaryKey((List<ID>) ids);
         }
         List<ID> list = new ArrayList<>();
         ids.forEach(list::add);
-        return baseMapper.selectAllByPrimaryKey(list);
+        return mapper.selectAllByPrimaryKey(list);
     }
 
     @Override
     public long count() {
-        return baseMapper.countByExample().build().execute();
+        return mapper.countByExample().build().execute();
     }
 
     @Override
     public void deleteById(ID id) {
-        baseMapper.deleteByPrimaryKey(id);
+        mapper.deleteByPrimaryKey(id);
     }
 
     @Override
@@ -106,12 +107,16 @@ public abstract class AbstractBaseMapperDao<T extends Identity<ID>, ID> implemen
     public void deleteAll(Iterable<? extends T> entities) {
         List<ID> list = new ArrayList<>();
         entities.forEach(e -> list.add(e.getId()));
-        baseMapper.deleteAllByPrimaryKey(list);
+        mapper.deleteAllByPrimaryKey(list);
     }
 
     @Override
     public void deleteAll() {
-        baseMapper.deleteByExample().build().execute();
+        mapper.deleteByExample().build().execute();
+    }
+
+    protected SqlTable getSqlTable() {
+        return null;
     }
 
 }

@@ -1,5 +1,6 @@
 package com.runjf.mybatis.crud;
 
+import org.mybatis.dynamic.sql.SqlTable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -10,18 +11,18 @@ import java.util.Arrays;
  *
  * Created by rjf on 2018/5/13.
  */
-public abstract class AbstractBaseMapperService<T extends Identity<ID>, ID> implements BaseService<T, ID> {
+public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T extends Identity<ID>, ID> implements BaseService<T, ID> {
 
-    private final BaseMapper<T, ID> baseMapper;
+    private final D mapper;
 
-    public AbstractBaseMapperService(BaseMapper<T, ID> baseMapper) {
-        this.baseMapper = baseMapper;
+    public AbstractBaseMapperService(D mapper) {
+        this.mapper = mapper;
     }
 
     @Override
     public T create(T entity) {
         if (entity != null) {
-            int count = baseMapper.insert(entity);
+            int count = mapper.insert(entity);
             if (count == 1) {
                 return get(entity.getId());
             }
@@ -31,12 +32,12 @@ public abstract class AbstractBaseMapperService<T extends Identity<ID>, ID> impl
 
     @Override
     public T get(ID id) {
-        return baseMapper.selectByPrimaryKey(id);
+        return mapper.selectByPrimaryKey(id);
     }
 
     @Override
     public T update(T entity) {
-        int update = baseMapper.updateByPrimaryKeySelective(entity);
+        int update = mapper.updateByPrimaryKeySelective(entity);
         if (update == 1) {
             return get(entity.getId());
         }
@@ -46,15 +47,21 @@ public abstract class AbstractBaseMapperService<T extends Identity<ID>, ID> impl
     @Override
     public void delete(ID[] ids) {
         if (ids != null) {
-            baseMapper.deleteAllByPrimaryKey(Arrays.asList(ids));
+            mapper.deleteAllByPrimaryKey(Arrays.asList(ids));
         }
     }
 
     @Override
     public Page<T> getPage(Pageable pageable) {
-        return PageUtils.buildPage(pageable, orders -> baseMapper.selectByExample()
+        return PageUtils.buildPage(pageable, orders -> mapper.selectByExample()
                 .orderBy(orders)
                 .build()
-                .execute());
+                .execute(),
+                getSqlTable());
     }
+
+    protected SqlTable getSqlTable() {
+        return null;
+    }
+
 }
