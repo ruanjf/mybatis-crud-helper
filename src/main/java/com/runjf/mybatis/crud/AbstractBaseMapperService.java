@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 用于Service层继承，提供基础操作
@@ -36,6 +38,11 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
     }
 
     @Override
+    public List<T> getByIds(List<ID> ids) {
+        return mapper.selectAllByPrimaryKey(removeDuplicate(ids));
+    }
+
+    @Override
     public T update(T entity) {
         int update = mapper.updateByPrimaryKeySelective(entity);
         if (update == 1) {
@@ -47,7 +54,7 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
     @Override
     public void delete(ID[] ids) {
         if (ids != null) {
-            mapper.deleteAllByPrimaryKey(Arrays.asList(ids));
+            mapper.deleteAllByPrimaryKey(removeDuplicate(Arrays.asList(ids)));
         }
     }
 
@@ -62,6 +69,10 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
 
     protected SqlTable getSqlTable() {
         return null;
+    }
+
+    private <V> List<V> removeDuplicate(List<V> list) {
+        return list.stream().distinct().collect(Collectors.toList());
     }
 
 }
