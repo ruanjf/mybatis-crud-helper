@@ -71,6 +71,10 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
         return null;
     }
 
+    protected D getMapper() {
+        return this.mapper;
+    }
+
     private <V> List<V> removeDuplicate(List<V> list) {
         return list.stream().distinct().collect(Collectors.toList());
     }
