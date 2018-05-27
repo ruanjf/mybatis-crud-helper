@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,9 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
 
     @Override
     public List<T> getByIds(List<ID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
         return mapper.selectAllByPrimaryKey(removeDuplicate(ids));
     }
 
