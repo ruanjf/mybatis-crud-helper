@@ -28,9 +28,16 @@ public class PageUtils {
     public static <T> Page<T> buildPage(Pageable pageable, Function<SortSpecification[], List<T>> func, SqlTable sqlTable) {
         if (func != null) {
             SortSpecification[] orders = buildSortSpecifications(pageable.getSort(), sqlTable);
+            //noinspection unchecked
+            List<T>[] result = new List[1];
             com.github.pagehelper.Page<T> list = PageHelper.startPage(pageable.getPageNumber() + 1, pageable.getPageSize())
-                    .doSelectPage(() -> func.apply(orders));
-            return new PageImpl<>(list, pageable, list.getTotal());
+                    .doSelectPage(() -> {
+                        List<T> apply = func.apply(orders);
+                        if (apply != null && ! (apply instanceof com.github.pagehelper.Page)) {
+                            result[0] = apply;
+                        }
+                    });
+            return new PageImpl<>(result[0] != null ? result[0] : list, pageable, list.getTotal());
         }
         return null;
     }
