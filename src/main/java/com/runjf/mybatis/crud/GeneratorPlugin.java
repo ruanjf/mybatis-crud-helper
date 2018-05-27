@@ -41,46 +41,43 @@ public class GeneratorPlugin extends PluginAdapter {
         interfaze.addImportedType(new FullyQualifiedJavaType("org.mybatis.dynamic.sql.select.QueryExpressionDSL"));
         interfaze.addImportedType(new FullyQualifiedJavaType("org.mybatis.dynamic.sql.select.MyBatis3SelectModelAdapter"));
 
-        // applyWhereSelective
+        // applyWhereSelective QueryExpressionDSL
         Method method = new Method();
-        method.setDefault(true);
-        context.getCommentGenerator().addGeneralMethodAnnotation(method, introspectedTable, new HashSet<>());
-        FullyQualifiedJavaType returnType = new FullyQualifiedJavaType("QueryExpressionDSL.QueryExpressionWhereBuilder") {
-            @Override
-            public String getFullyQualifiedName() {
-                return "QueryExpressionDSL<R>.QueryExpressionWhereBuilder";
-            }
-        };
-        method.setReturnType(returnType);
-        method.setName("applyWhereSelective");
-        method.getParameters().add(new Parameter(new FullyQualifiedJavaType("QueryExpressionDSL<R>"), "queryExpressionDSL"));
-        method.getTypeParameters().add(new TypeParameter("R"));
-        method.getParameters().add(new Parameter(modelType, "params_"));
-        method.addBodyLine("return queryExpressionDSL");
-        List<IntrospectedColumn> columns = ListUtilities.removeGeneratedAlwaysColumns(introspectedTable.getAllColumns());
-        Iterator<IntrospectedColumn> iter = columns.iterator();
-        boolean first = true;
-        while (iter.hasNext()) {
-            IntrospectedColumn column = iter.next();
-            String methodName = JavaBeansUtil.getGetterMethodName(column.getJavaProperty(), column.getFullyQualifiedJavaType());
-            String line = "        ." +
-                    (first ? "where" : "and") +
-                    "(" + column.getJavaProperty() +
-                    ", isEqualToWhenPresent(params_::" +
-                    methodName + "))";
-            if (!iter.hasNext()) {
-                line += ";";
-            }
-            first = false;
-            method.addBodyLine(line);
-        }
+//        FullyQualifiedJavaType returnType = new FullyQualifiedJavaType("QueryExpressionDSL.QueryExpressionWhereBuilder") {
+//            @Override
+//            public String getFullyQualifiedName() {
+//                return "QueryExpressionDSL<R>.QueryExpressionWhereBuilder";
+//            }
+//        };
+//        method.setReturnType(returnType);
+//        method.getParameters().add(new Parameter(new FullyQualifiedJavaType("QueryExpressionDSL<R>"), "dsl"));
+        addDSLWhereSelective(introspectedTable, modelType, method, "QueryExpressionDSL<R>", "QueryExpressionWhereBuilder");
+        interfaze.addMethod(method);
+
+        // applyWhereSelective UpdateDSL
+        method = new Method();
+        addDSLWhereSelective(introspectedTable, modelType, method, "UpdateDSL<R>", "UpdateWhereBuilder");
+        interfaze.addMethod(method);
+
+        // applyWhereSelective DeleteDSL
+        method = new Method();
+        addDSLWhereSelective(introspectedTable, modelType, method, "DeleteDSL<R>", "DeleteWhereBuilder");
+        interfaze.addMethod(method);
+
+        // applyWhereSelective AbstractWhereDSL
+        method = new Method();
+        addDSLWhereSelective(introspectedTable, modelType, method, "D", null);
+        method.getTypeParameters().clear();
+        method.getTypeParameters().add(new TypeParameter("D extends AbstractWhereDSL<D>"));
+        method.setReturnType(new FullyQualifiedJavaType("D"));
+        interfaze.addImportedType(new FullyQualifiedJavaType("org.mybatis.dynamic.sql.where.AbstractWhereDSL"));
         interfaze.addMethod(method);
 
         // selectByExampleWhereSelective
         method = new Method();
         method.setDefault(true);
         context.getCommentGenerator().addGeneralMethodAnnotation(method, introspectedTable, new HashSet<>());
-        returnType = new FullyQualifiedJavaType("QueryExpressionDSL.QueryExpressionWhereBuilder") {
+        FullyQualifiedJavaType returnType = new FullyQualifiedJavaType("QueryExpressionDSL.QueryExpressionWhereBuilder") {
             @Override
             public String getFullyQualifiedName() {
                 return "QueryExpressionDSL<MyBatis3SelectModelAdapter<List<"
@@ -240,6 +237,48 @@ public class GeneratorPlugin extends PluginAdapter {
                 addSuper.accept(fqjt);
             }
 
+        }
+    }
+
+    private void addDSLWhereSelective(IntrospectedTable introspectedTable, FullyQualifiedJavaType modelType,
+                                      Method method, String dslType, String simpleReturnType) {
+        method.setDefault(true);
+        context.getCommentGenerator().addGeneralMethodAnnotation(method, introspectedTable, new HashSet<>());
+        method.setName("applyWhereSelective");
+        method.getTypeParameters().add(new TypeParameter("R"));
+        method.getParameters().add(new Parameter(new FullyQualifiedJavaType(dslType), "dsl"));
+        method.getParameters().add(new Parameter(modelType, "params_"));
+        boolean first = false;
+        if (simpleReturnType != null) {
+            first = true; // not AbstractWhereDSL
+            int i = dslType.indexOf('<');
+            i = i > 0 && i < dslType.length() ? i : dslType.length();
+            // QueryExpressionDSL.QueryExpressionWhereBuilder
+            FullyQualifiedJavaType returnType = new FullyQualifiedJavaType(dslType.substring(0, i) + "." + simpleReturnType) {
+                @Override
+                public String getFullyQualifiedName() {
+                    // QueryExpressionDSL<R>.QueryExpressionWhereBuilder
+                    return dslType + "." + simpleReturnType;
+                }
+            };
+            method.setReturnType(returnType);
+        }
+        method.addBodyLine("return dsl");
+        List<IntrospectedColumn> columns = ListUtilities.removeGeneratedAlwaysColumns(introspectedTable.getAllColumns());
+        Iterator<IntrospectedColumn> iter = columns.iterator();
+        while (iter.hasNext()) {
+            IntrospectedColumn column = iter.next();
+            String methodName = JavaBeansUtil.getGetterMethodName(column.getJavaProperty(), column.getFullyQualifiedJavaType());
+            String line = "        ." +
+                    (first ? "where" : "and") +
+                    "(" + column.getJavaProperty() +
+                    ", isEqualToWhenPresent(params_::" +
+                    methodName + "))";
+            if (!iter.hasNext()) {
+                line += ";";
+            }
+            first = false;
+            method.addBodyLine(line);
         }
     }
 

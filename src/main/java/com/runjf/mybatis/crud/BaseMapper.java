@@ -10,6 +10,7 @@ import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.mybatis.dynamic.sql.update.MyBatis3UpdateModelAdapter;
 import org.mybatis.dynamic.sql.update.UpdateDSL;
 import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
+import org.mybatis.dynamic.sql.where.AbstractWhereDSL;
 
 import java.util.List;
 
@@ -57,7 +58,13 @@ public interface BaseMapper<T, ID> {
 
     boolean existsByPrimaryKey(ID id);
 
-    <R> QueryExpressionDSL<R>.QueryExpressionWhereBuilder applyWhereSelective(QueryExpressionDSL<R> queryExpressionDSL, T params);
+    <R> QueryExpressionDSL<R>.QueryExpressionWhereBuilder applyWhereSelective(QueryExpressionDSL<R> dsl, T params);
+
+    <R> UpdateDSL<R>.UpdateWhereBuilder applyWhereSelective(UpdateDSL<R> dsl, T params);
+
+    <R> DeleteDSL<R>.DeleteWhereBuilder applyWhereSelective(DeleteDSL<R> dsl, T params);
+
+    <D extends AbstractWhereDSL<D>> D applyWhereSelective(D dsl, T params);
 
     QueryExpressionDSL<MyBatis3SelectModelAdapter<List<T>>>.QueryExpressionWhereBuilder selectByExampleWhereSelective(T params);
 
