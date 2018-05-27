@@ -9,9 +9,13 @@ import org.mybatis.generator.api.dom.java.JavaVisibility;
 import org.mybatis.generator.api.dom.java.Method;
 import org.mybatis.generator.api.dom.java.Parameter;
 import org.mybatis.generator.api.dom.java.TopLevelClass;
+import org.mybatis.generator.api.dom.java.TypeParameter;
+import org.mybatis.generator.codegen.mybatis3.ListUtilities;
+import org.mybatis.generator.internal.util.JavaBeansUtil;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -32,18 +36,74 @@ public class GeneratorPlugin extends PluginAdapter {
         String clientSuperInterface = properties.getProperty("clientSuperInterface", "com.runjf.mybatis.crud.BaseMapper#M#K");
         addClass(clientSuperInterface, introspectedTable, interfaze::addImportedType, interfaze::addSuperInterface);
 
+        FullyQualifiedJavaType modelType = new FullyQualifiedJavaType(introspectedTable.getBaseRecordType());
+
+        interfaze.addImportedType(new FullyQualifiedJavaType("org.mybatis.dynamic.sql.select.QueryExpressionDSL"));
+        interfaze.addImportedType(new FullyQualifiedJavaType("org.mybatis.dynamic.sql.select.MyBatis3SelectModelAdapter"));
+
+        // applyWhereSelective
+        Method method = new Method();
+        method.setDefault(true);
+        context.getCommentGenerator().addGeneralMethodAnnotation(method, introspectedTable, new HashSet<>());
+        FullyQualifiedJavaType returnType = new FullyQualifiedJavaType("QueryExpressionDSL.QueryExpressionWhereBuilder") {
+            @Override
+            public String getFullyQualifiedName() {
+                return "QueryExpressionDSL<R>.QueryExpressionWhereBuilder";
+            }
+        };
+        method.setReturnType(returnType);
+        method.setName("applyWhereSelective");
+        method.getParameters().add(new Parameter(new FullyQualifiedJavaType("QueryExpressionDSL<R>"), "queryExpressionDSL"));
+        method.getTypeParameters().add(new TypeParameter("R"));
+        method.getParameters().add(new Parameter(modelType, "params_"));
+        method.addBodyLine("return queryExpressionDSL");
+        List<IntrospectedColumn> columns = ListUtilities.removeGeneratedAlwaysColumns(introspectedTable.getAllColumns());
+        Iterator<IntrospectedColumn> iter = columns.iterator();
+        boolean first = true;
+        while (iter.hasNext()) {
+            IntrospectedColumn column = iter.next();
+            String methodName = JavaBeansUtil.getGetterMethodName(column.getJavaProperty(), column.getFullyQualifiedJavaType());
+            String line = "        ." +
+                    (first ? "where" : "and") +
+                    "(" + column.getJavaProperty() +
+                    ", isEqualToWhenPresent(params_::" +
+                    methodName + "))";
+            if (!iter.hasNext()) {
+                line += ";";
+            }
+            first = false;
+            method.addBodyLine(line);
+        }
+        interfaze.addMethod(method);
+
+        // selectByExampleWhereSelective
+        method = new Method();
+        method.setDefault(true);
+        context.getCommentGenerator().addGeneralMethodAnnotation(method, introspectedTable, new HashSet<>());
+        returnType = new FullyQualifiedJavaType("QueryExpressionDSL.QueryExpressionWhereBuilder") {
+            @Override
+            public String getFullyQualifiedName() {
+                return "QueryExpressionDSL<MyBatis3SelectModelAdapter<List<"
+                        + modelType.getShortNameWithoutTypeArguments()
+                        + ">>>.QueryExpressionWhereBuilder";
+            }
+        };
+        method.setReturnType(returnType);
+        method.setName("selectByExampleWhereSelective");
+        method.getParameters().add(new Parameter(modelType, "params_"));
+        method.addBodyLine("return applyWhereSelective(this.selectByExample(), params_);");
+        interfaze.addMethod(method);
+
         List<IntrospectedColumn> primaryKeyColumns = introspectedTable.getPrimaryKeyColumns();
         if (!primaryKeyColumns.isEmpty() && primaryKeyColumns.size() == 1) { // 不支持联合主键
             IntrospectedColumn primaryKeyColumn = primaryKeyColumns.get(0);
             HashSet<FullyQualifiedJavaType> imports = new HashSet<>();
 
-            FullyQualifiedJavaType modelType = new FullyQualifiedJavaType(introspectedTable.getBaseRecordType());
-
             // selectAllByPrimaryKey
-            Method method = new Method();
+            method = new Method();
             method.setDefault(true);
             context.getCommentGenerator().addGeneralMethodAnnotation(method, introspectedTable, imports);
-            FullyQualifiedJavaType returnType = new FullyQualifiedJavaType("List");
+            returnType = new FullyQualifiedJavaType("List");
             returnType.addTypeArgument(modelType);
             method.setReturnType(returnType);
             method.setName("selectAllByPrimaryKey");
@@ -183,11 +243,4 @@ public class GeneratorPlugin extends PluginAdapter {
         }
     }
 
-    public static void main(String[] args) {
-        FullyQualifiedJavaType fqjt = new FullyQualifiedJavaType("com.runjf.spring.mybatis.support.BaseMapper");
-        System.out.println(fqjt.getShortName());
-        fqjt.addTypeArgument(new FullyQualifiedJavaType("Abc"));
-        fqjt.addTypeArgument(new FullyQualifiedJavaType("Def"));
-        System.out.println(fqjt);
-    }
 }

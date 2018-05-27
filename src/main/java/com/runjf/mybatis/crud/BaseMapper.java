@@ -56,4 +56,9 @@ public interface BaseMapper<T, ID> {
     int deleteAllByPrimaryKey(List<ID> ids);
 
     boolean existsByPrimaryKey(ID id);
+
+    <R> QueryExpressionDSL<R>.QueryExpressionWhereBuilder applyWhereSelective(QueryExpressionDSL<R> queryExpressionDSL, T params);
+
+    QueryExpressionDSL<MyBatis3SelectModelAdapter<List<T>>>.QueryExpressionWhereBuilder selectByExampleWhereSelective(T params);
+
 }
