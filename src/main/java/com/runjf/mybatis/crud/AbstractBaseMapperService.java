@@ -65,9 +65,18 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
     @Override
     public Page<T> getPage(Pageable pageable) {
         return PageUtils.buildPage(pageable, orders -> mapper.selectByExample()
-                .orderBy(orders)
-                .build()
-                .execute(),
+                        .orderBy(orders)
+                        .build()
+                        .execute(),
+                getSqlTable());
+    }
+
+    @Override
+    public Page<T> getPageByParams(T params, Pageable pageable) {
+        return PageUtils.buildPage(pageable, order -> mapper.selectByExampleWhereSelective(params)
+                        .orderBy(order)
+                        .build()
+                        .execute(),
                 getSqlTable());
     }
 

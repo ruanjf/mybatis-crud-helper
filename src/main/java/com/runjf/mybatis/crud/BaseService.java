@@ -25,4 +25,6 @@ public interface BaseService<T, ID> {
 
     Page<T> getPage(Pageable pageable);
 
+    Page<T> getPageByParams(T params, Pageable pageable);
+
 }
