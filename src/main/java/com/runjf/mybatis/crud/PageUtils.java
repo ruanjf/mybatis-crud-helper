@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -68,7 +69,7 @@ public class PageUtils {
                     of = of.descending();
                 }
                 return of;
-            }).forEach(orders::add);
+            }).filter(Objects::nonNull).forEach(orders::add);
         }
         return orders.isEmpty() ? new SortSpecification[0] : orders.toArray(new SortSpecification[orders.size()]);
     }
