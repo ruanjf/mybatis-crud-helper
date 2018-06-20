@@ -4,9 +4,12 @@ import org.mybatis.dynamic.sql.SqlTable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -17,9 +20,15 @@ import java.util.stream.Collectors;
 public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T extends Identity<ID>, ID> implements BaseService<T, ID> {
 
     private final D mapper;
+    private int sqlInLimit;
 
     public AbstractBaseMapperService(D mapper) {
+        this(mapper, 500);
+    }
+
+    public AbstractBaseMapperService(D mapper, int sqlInLimit) {
         this.mapper = mapper;
+        this.sqlInLimit = sqlInLimit;
     }
 
     @Override
@@ -43,7 +52,17 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
-        return mapper.selectAllByPrimaryKey(removeDuplicate(ids));
+        List<ID> list = removeDuplicate(ids);
+        Collection<List<ID>> partition = partition(list, sqlInLimit);
+        if (partition.size() == 1) {
+            return mapper.selectAllByPrimaryKey(partition.iterator().next());
+        } else {
+            List<T> ret = new ArrayList<>(ids.size());
+            for (List<ID> idList : partition) {
+                ret.addAll(mapper.selectAllByPrimaryKey(idList));
+            }
+            return ret;
+        }
     }
 
     @Override
@@ -58,7 +77,11 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
     @Override
     public void delete(ID[] ids) {
         if (ids != null) {
-            mapper.deleteAllByPrimaryKey(removeDuplicate(Arrays.asList(ids)));
+            List<ID> list = removeDuplicate(Arrays.asList(ids));
+            Collection<List<ID>> partition = partition(list, sqlInLimit);
+            for (List<ID> idList : partition) {
+                mapper.deleteAllByPrimaryKey(idList);
+            }
         }
     }
 
@@ -80,13 +103,22 @@ public abstract class AbstractBaseMapperService<D extends BaseMapper<T, ID>, T e
                 getSqlTable());
     }
 
-    protected SqlTable getSqlTable() {
-        return null;
-    }
-
     protected D getMapper() {
         return this.mapper;
     }
+
+    protected static <T> Collection<List<T>> partition(List<T> list, int size) {
+        if (size <= list.size()) {
+            return Collections.singleton(list);
+        }
+        final AtomicInteger counter = new AtomicInteger(0);
+
+        return list.stream()
+                .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / size))
+                .values();
+    }
+
+    protected abstract SqlTable getSqlTable();
 
     private <V> List<V> removeDuplicate(List<V> list) {
         return list.stream().distinct().collect(Collectors.toList());
