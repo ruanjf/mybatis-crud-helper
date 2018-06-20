@@ -40,17 +40,10 @@ public class GeneratorPlugin extends PluginAdapter {
 
         interfaze.addImportedType(new FullyQualifiedJavaType("org.mybatis.dynamic.sql.select.QueryExpressionDSL"));
         interfaze.addImportedType(new FullyQualifiedJavaType("org.mybatis.dynamic.sql.select.MyBatis3SelectModelAdapter"));
+        interfaze.addStaticImport("org.mybatis.dynamic.sql.SqlBuilder.*");
 
         // applyWhereSelective QueryExpressionDSL
         Method method = new Method();
-//        FullyQualifiedJavaType returnType = new FullyQualifiedJavaType("QueryExpressionDSL.QueryExpressionWhereBuilder") {
-//            @Override
-//            public String getFullyQualifiedName() {
-//                return "QueryExpressionDSL<R>.QueryExpressionWhereBuilder";
-//            }
-//        };
-//        method.setReturnType(returnType);
-//        method.getParameters().add(new Parameter(new FullyQualifiedJavaType("QueryExpressionDSL<R>"), "dsl"));
         addDSLWhereSelective(introspectedTable, modelType, method, "QueryExpressionDSL<R>", "QueryExpressionWhereBuilder");
         interfaze.addMethod(method);
 
@@ -210,9 +203,10 @@ public class GeneratorPlugin extends PluginAdapter {
                 int i = itf.indexOf('#');
                 if (i > 0 && i < itf.length()) {
                     types = Arrays.asList(itf.substring(i + 1).split("#"));
+                    int pkCount = introspectedTable.getPrimaryKeyColumns().size();
                     if (types.contains("K")
-                            && introspectedTable.getPrimaryKeyColumns().size() > 1) {
-                        continue; // 不支持联合主键
+                            && (pkCount < 1 || pkCount > 1)) {
+                        continue; // 无主键或者不支持联合主键
                     }
                     itf = itf.substring(0, i);
                 }
