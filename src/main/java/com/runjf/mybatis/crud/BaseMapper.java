@@ -30,7 +30,7 @@ public interface BaseMapper<T, ID> {
 
     QueryExpressionDSL<MyBatis3SelectModelAdapter<Long>> countByExample();
 
-    DeleteDSL<MyBatis3DeleteModelAdapter<ID>> deleteByExample();
+    DeleteDSL<MyBatis3DeleteModelAdapter<Integer>> deleteByExample();
 
     int deleteByPrimaryKey(ID id);
 
@@ -44,9 +44,9 @@ public interface BaseMapper<T, ID> {
 
     T selectByPrimaryKey(ID id);
 
-    UpdateDSL<MyBatis3UpdateModelAdapter<ID>> updateByExample(T record);
+    UpdateDSL<MyBatis3UpdateModelAdapter<Integer>> updateByExample(T record);
 
-    UpdateDSL<MyBatis3UpdateModelAdapter<ID>> updateByExampleSelective(T record);
+    UpdateDSL<MyBatis3UpdateModelAdapter<Integer>> updateByExampleSelective(T record);
 
     int updateByPrimaryKey(T record);
 
