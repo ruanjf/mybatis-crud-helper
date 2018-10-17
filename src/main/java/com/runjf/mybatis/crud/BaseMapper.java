@@ -13,8 +13,35 @@ import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.mybatis.dynamic.sql.where.AbstractWhereDSL;
 
 import java.util.List;
+import java.util.function.Function;
 
 public interface BaseMapper<T, ID> {
+
+    /**
+     * 获取列表
+     * <p>
+     * 需开启{@link com.runjf.mybatis.interceptor.SpringJdbcResultSetInterceptor}插件
+     *
+     * @param selectStatement 查询语句
+     * @param clazz 返回值实体类型
+     * @param <E> 实体类型
+     * @return 集合列表
+     */
+    <E> List<E> selectList(SelectStatementProvider selectStatement, Class<E> clazz);
+
+    /**
+     * 获取列表
+     * <p>
+     * 需开启{@link com.runjf.mybatis.interceptor.SpringJdbcResultSetInterceptor}插件
+     *
+     * @param clazz 返回值实体类型
+     * @param <E> 实体类型
+     * @return 集合列表
+     * @see #selectList(SelectStatementProvider, Class)
+     */
+    default <E> Function<SelectStatementProvider, List<E>> selectList(Class<E> clazz) {
+        return selectStatementProvider -> this.selectList(selectStatementProvider, clazz);
+    }
 
     long count(SelectStatementProvider selectStatement);
 

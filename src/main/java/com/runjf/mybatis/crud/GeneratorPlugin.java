@@ -135,6 +135,18 @@ public class GeneratorPlugin extends PluginAdapter {
             interfaze.addMethod(method);
         }
 
+        // selectList List<E>
+        method = new Method();
+        context.getCommentGenerator().addGeneralMethodAnnotation(method, introspectedTable, new HashSet<>());
+        method.getTypeParameters().add(new TypeParameter("E"));
+        method.getAnnotations().add("@SelectProvider(type=SqlProviderAdapter.class, method=\"select\")");
+        method.setReturnType(new FullyQualifiedJavaType("List<E>"));
+        method.setName("selectList");
+        method.getParameters().add(new Parameter(new FullyQualifiedJavaType("SelectStatementProvider"), "selectStatement"));
+        method.getParameters().add(new Parameter(new FullyQualifiedJavaType("Class<E>"), "clazz"));
+        interfaze.addMethod(method);
+        interfaze.addImportedType(new FullyQualifiedJavaType("org.mybatis.dynamic.sql.where.AbstractWhereDSL"));
+
         return true;
     }
 
