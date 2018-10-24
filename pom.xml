@@ -12,7 +12,7 @@
 
     <groupId>com.runjf.mybatis</groupId>
     <artifactId>mybatis-crud-helper</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2.1</version>
 
     <licenses>
         <license>
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>com.github.pagehelper</groupId>
             <artifactId>pagehelper-spring-boot-starter</artifactId>
-            <version>1.2.5</version>
+            <version>1.2.9</version>
         </dependency>
         <dependency>
             <groupId>org.mybatis.dynamic-sql</groupId>
