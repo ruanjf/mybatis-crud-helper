@@ -1,5 +1,7 @@
 package com.runjf.mybatis.crud;
 
+import com.runjf.mybatis.interceptor.RowMapperResultSelectStatementProvider;
+import com.runjf.mybatis.interceptor.RowMapperResultSetInterceptor;
 import org.mybatis.dynamic.sql.delete.DeleteDSL;
 import org.mybatis.dynamic.sql.delete.MyBatis3DeleteModelAdapter;
 import org.mybatis.dynamic.sql.delete.render.DeleteStatementProvider;
@@ -18,29 +20,29 @@ import java.util.function.Function;
 public interface BaseMapper<T, ID> {
 
     /**
-     * 获取列表
+     * 内部使用，获取列表
      * <p>
-     * 需开启{@link com.runjf.mybatis.interceptor.SpringJdbcResultSetInterceptor}插件
+     * 需开启{@link RowMapperResultSetInterceptor}插件
      *
      * @param selectStatement 查询语句
-     * @param clazz 返回值实体类型
      * @param <E> 实体类型
      * @return 集合列表
      */
-    <E> List<E> selectList(SelectStatementProvider selectStatement, Class<E> clazz);
+    <E> List<E> selectList(SelectStatementProvider selectStatement);
 
     /**
      * 获取列表
      * <p>
-     * 需开启{@link com.runjf.mybatis.interceptor.SpringJdbcResultSetInterceptor}插件
+     * 需开启{@link RowMapperResultSetInterceptor}插件
      *
      * @param clazz 返回值实体类型
      * @param <E> 实体类型
      * @return 集合列表
-     * @see #selectList(SelectStatementProvider, Class)
+     * @see #selectList(SelectStatementProvider)
      */
     default <E> Function<SelectStatementProvider, List<E>> selectList(Class<E> clazz) {
-        return selectStatementProvider -> this.selectList(selectStatementProvider, clazz);
+        return selectStatementProvider
+                -> this.selectList(new RowMapperResultSelectStatementProvider(selectStatementProvider, clazz));
     }
 
     long count(SelectStatementProvider selectStatement);

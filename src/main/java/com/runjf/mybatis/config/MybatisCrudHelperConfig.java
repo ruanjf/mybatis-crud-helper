@@ -1,6 +1,6 @@
 package com.runjf.mybatis.config;
 
-import com.runjf.mybatis.interceptor.SpringJdbcResultSetInterceptor;
+import com.runjf.mybatis.interceptor.RowMapperResultSetInterceptor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,8 +13,8 @@ public class MybatisCrudHelperConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public SpringJdbcResultSetInterceptor springJdbcResultSetInterceptor() {
-        return new SpringJdbcResultSetInterceptor();
+    public RowMapperResultSetInterceptor springJdbcResultSetInterceptor() {
+        return new RowMapperResultSetInterceptor();
     }
 
 }

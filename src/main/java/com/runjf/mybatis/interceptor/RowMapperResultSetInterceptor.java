@@ -1,10 +1,10 @@
 package com.runjf.mybatis.interceptor;
 
-import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
 import org.apache.ibatis.executor.resultset.ResultSetHandler;
 import org.apache.ibatis.plugin.*;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.util.ReflectionUtils;
@@ -25,7 +25,7 @@ import java.util.Properties;
         method = "handleResultSets",
         args = {Statement.class}
 ) })
-public class SpringJdbcResultSetInterceptor implements Interceptor {
+public class RowMapperResultSetInterceptor implements Interceptor {
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -34,16 +34,18 @@ public class SpringJdbcResultSetInterceptor implements Interceptor {
         if (parameterHandler != null) {
             ReflectionUtils.makeAccessible(parameterHandler);
             ParameterHandler ph = (ParameterHandler) parameterHandler.get(drs);
-            if (ph.getParameterObject() instanceof MapperMethod.ParamMap) {
-                MapperMethod.ParamMap paramMap = (MapperMethod.ParamMap) ph.getParameterObject();
-                Object clazz = paramMap.get("param2");
-                if (clazz instanceof Class) {
+            if (ph.getParameterObject() instanceof RowMapperResultSelectStatementProvider) {
+                RowMapperResultSelectStatementProvider parameterObject = (RowMapperResultSelectStatementProvider) ph.getParameterObject();
+
+                RowMapper<?> rowMapper = parameterObject.getRowMapper();
+                if (rowMapper != null) {
                     Statement stmt = (Statement) invocation.getArgs()[0];
 
                     ResultSet resultSet = null;
                     try {
                         resultSet = stmt.getResultSet();
-                        return new RowMapperResultSetExtractor(BeanPropertyRowMapper.newInstance((Class<?>) clazz)).extractData(resultSet);
+                        //noinspection unchecked
+                        return new RowMapperResultSetExtractor(rowMapper).extractData(resultSet);
                     } finally {
                         JdbcUtils.closeResultSet(resultSet);
                     }
